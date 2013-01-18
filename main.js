@@ -43,7 +43,12 @@ Redminer.prototype.getIssuesFromPage = function (queryId, page, callback) {
         }
         if (result.total_count > ((result.offset + result.limit))) {
             self.getIssuesFromPage(queryId, page + 1, function (error, nextPage) {
-                callback(error, result.issues.include(nextPage));
+				if(!error ) {
+					for( var k in nextPage ) {
+						result.issues[result.issues.length]= nextPage[k];
+					}	
+				}
+                callback(error, result.issues);
             });
         }
         else {
