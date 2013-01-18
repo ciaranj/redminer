@@ -28,7 +28,7 @@ Redminer.prototype.getIssues = function (queryId, page, callback) {
     }
 
     makeRequest(rest.get, this.uri + '/issues.json', {
-        headers: {'X-Redmine-API-Key': this.apiKey},
+        headers: {'X-ChiliProject-API-Key': this.apiKey},
         query: query
     }, function (x) {
         return x;
