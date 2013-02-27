@@ -21,18 +21,20 @@ function makeRequest(fn, uri, options, selector, callback) {
         });
 }
 
-Redminer.prototype.getIssues = function (queryId, page, callback) {
+Redminer.prototype.getRepresentations = function (representationUrl, criteria, page, callback) {
 
     var query = {};
-
-    if (queryId)
-        query.query_id = queryId;
 
     if (page) {
         query.page = page;
     }
+    if (criteria) {
+        for(var k in criteria) {
+          query[k]= criteria[k];
+        }
+    }
     query.limit= 100;
-    makeRequest(rest.get, this.uri + '/issues.json', {
+    makeRequest(rest.get, representationUrl, {
         headers: {'X-ChiliProject-API-Key': this.apiKey},
         query: query
     }, function (x) {
@@ -40,33 +42,34 @@ Redminer.prototype.getIssues = function (queryId, page, callback) {
     }, callback);
 };
 
-Redminer.prototype.getIssuesFromPage = function (queryId, page, callback) {
+Redminer.prototype.getRepresentationsFromPage = function (representationUrl, representationResultProperty, criteria, page, callback) {
     var self = this;
-    this.getIssues(queryId, page, function (error, result) {
+    this.getRepresentations(representationUrl, criteria, page, function (error, result) {
         if (error) {
             return callback(error, result);
         }
         if (result.total_count > ((result.offset + result.limit))) {
-            self.getIssuesFromPage(queryId, page + 1, function (error, nextPage) {
+            self.getRepresentationsFromPage(representationUrl, representationResultProperty, criteria, page + 1, function (error, nextPage) {
               if(error ) {
                 callback(error);
               } 
               else {
                 for( var k in nextPage ) {
-                  result.issues[result.issues.length]= nextPage[k];
+                  result[representationResultProperty].push( nextPage[k] );
                 }
-               callback(null, result.issues);
+               callback(null, result[representationResultProperty]);
              }
             });
         }
         else {
-            callback(null, result.issues);
+            callback(null, result[representationResultProperty]);
         }
     });
 };
 
+
 Redminer.prototype.getAllIssues = function (queryId, callback) {
-    this.getIssuesFromPage(queryId, 1, callback);
+    this.getRepresentationsFromPage(this.uri + '/issues.json', "issues", {query_id: queryId}, 1, callback);
 };
 
 Redminer.prototype.getIssueUri = function (id) {
@@ -85,52 +88,6 @@ Redminer.prototype.getIssue = function (id, callback) {
     }, callback);
 };
 
-Redminer.prototype.getUsers = function (criteria, page, callback) {
-
-    var query = {};
-
-    if (page) {
-        query.page = page;
-    }
-    if (criteria) {
-        for(var k in criteria) {
-          query[k]= criteria[k];
-        }
-    }
-
-    query.limit= 100;
-    makeRequest(rest.get, this.rootUri + '/users.json', {
-        headers: {'X-ChiliProject-API-Key': this.apiKey},
-        query: query
-    }, function (x) {
-        return x;
-    }, callback);
-};
-
-Redminer.prototype.getUsersFromPage = function (criteria, page, callback) {
-    var self = this;
-    this.getUsers(criteria, page, function (error, result) {
-        if (error) {
-            return callback(error, result);
-        }
-        if (result.total_count > ((result.offset + result.limit))) {
-            self.getUsersFromPage(criteria, page + 1, function (error, nextPage) {
-              if(error ) {
-                callback(error);
-              }
-              else {
-                for( var k in nextPage ) {
-                  result.users[result.users.length]= nextPage[k];
-                }
-               callback(null, result.users);
-             }
-            });
-        }
-        else {
-            callback(null, result.users);
-        }
-    });
-};
 
 // criteria.status=0 All
 // criteria.status=1 Active
@@ -142,7 +99,7 @@ Redminer.prototype.getAllUsers = function (criteria, callback) {
     callback= criteria;
     criteria= {status: "active" }
   }
-  this.getUsersFromPage(criteria, 1, callback);
+  this.getRepresentationsFromPage(this.rootUri + '/users.json', "users", criteria, 1, callback);
 };
 
 module.exports = Redminer;
