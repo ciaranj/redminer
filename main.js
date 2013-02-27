@@ -26,7 +26,7 @@ Redminer.prototype.getIssues = function (queryId, page, callback) {
     if (page) {
         query.page = page;
     }
-
+    query.limit= 100;
     makeRequest(rest.get, this.uri + '/issues.json', {
         headers: {'X-ChiliProject-API-Key': this.apiKey},
         query: query
@@ -43,22 +43,25 @@ Redminer.prototype.getIssuesFromPage = function (queryId, page, callback) {
         }
         if (result.total_count > ((result.offset + result.limit))) {
             self.getIssuesFromPage(queryId, page + 1, function (error, nextPage) {
-				if(!error ) {
-					for( var k in nextPage ) {
-						result.issues[result.issues.length]= nextPage[k];
-					}	
-				}
-                callback(error, result.issues);
+              if(error ) {
+                callback(error);
+              } 
+              else {
+                for( var k in nextPage ) {
+                  result.issues[result.issues.length]= nextPage[k];
+                }
+               callback(null, result.issues);
+             }
             });
         }
         else {
-            callback(error, result.issues);
+            callback(null, result.issues);
         }
     });
 };
 
 Redminer.prototype.getAllIssues = function (queryId, callback) {
-    this.getIssuesFromPage(queryId, 0, callback);
+    this.getIssuesFromPage(queryId, 1, callback);
 };
 
 Redminer.prototype.getIssueUri = function (id) {
